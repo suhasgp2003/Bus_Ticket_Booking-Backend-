@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from .serializers import UserRegisterSerializer, BusSerializer, BookingSerializer, SeatSerializer
 from rest_framework.response import Response
 from .models import Bus, Seat, Booking
+from django.db import transaction
 
 # Create your views here.
 class RegisterView(APIView):
@@ -36,24 +37,57 @@ class BusDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Bus.objects.all()
     serializer_class = BusSerializer
 
+
+
 class BookingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        seat_id = request.data.get('seat')
-        try:
-            seat = Seat.objects.get(id=seat_id)
-            if seat.is_booked:
-                return Response({'error': 'Seat is already booked'}, status=status.HTTP_400_BAD_REQUEST)
-            seat.is_booked = True
-            seat.save()
+        seat_ids = request.data.get("seats", [])
 
-            booking=Booking.objects.create(user=request.user, bus=seat.bus, seat=seat)
-            serializer=BookingSerializer(booking)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except Seat.DoesNotExist:
-            return Response({'error': 'Seat does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        if not isinstance(seat_ids, list) or not seat_ids:
+            return Response(
+                {"error": "Provide at least one seat in 'seats'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        if len(seat_ids) != len(set(seat_ids)):
+            return Response(
+                {"error": "Duplicate seat IDs are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            seats = list(
+                Seat.objects.select_for_update().filter(id__in=seat_ids)
+            )
+
+            if len(seats) != len(seat_ids):
+                return Response(
+                    {"error": "One or more seats do not exist."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            booked_seats = [seat.seat_number for seat in seats if seat.is_booked]
+            if booked_seats:
+                return Response(
+                    {"error": "Some seats are already booked.", "seats": booked_seats},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            for seat in seats:
+                seat.is_booked = True
+                seat.save(update_fields=["is_booked"])
+
+            bookings = Booking.objects.bulk_create([
+                Booking(user=request.user, bus=seat.bus, seat=seat)
+                for seat in seats
+            ])
+
+        return Response(
+            BookingSerializer(bookings, many=True).data,
+            status=status.HTTP_201_CREATED,
+        )
 class UserBookingsView(APIView):
     permission_classes = [IsAuthenticated]
 

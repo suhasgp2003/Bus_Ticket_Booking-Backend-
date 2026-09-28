@@ -35,13 +35,19 @@ class BusSummarySerializer(serializers.ModelSerializer):
         fields = ['bus_name', 'bus_number', 'origin', 'destination']           
 
 class BookingSerializer(serializers.ModelSerializer):
-    bus=BusSummarySerializer(read_only=True)
-    seat=SeatSerializer(read_only=True)
-    user=serializers.StringRelatedField(read_only=True)
-    price=serializers.StringRelatedField()
-    origin=serializers.StringRelatedField()
-    destination=serializers.StringRelatedField()    
+    bus = BusSummarySerializer(read_only=True)
+    seat = SeatSerializer(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+    price = serializers.DecimalField(
+        source="bus.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+    origin = serializers.CharField(source="bus.origin", read_only=True)
+    destination = serializers.CharField(source="bus.destination", read_only=True)
+
     class Meta:
-        model=Booking
-        fields='__all__'
-        read_only_fields=['user','booking_time', 'bus', 'seat', 'price', 'origin', 'destination']
+        model = Booking
+        fields = '__all__'
+        read_only_fields = ['user', 'booking_time', 'bus', 'seat', 'price', 'origin', 'destination']
