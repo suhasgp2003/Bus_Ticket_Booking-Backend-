@@ -88,6 +88,71 @@ class BookingView(APIView):
             BookingSerializer(bookings, many=True).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class BookingCancellationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        seat_ids = request.data.get("seats", [])
+
+        if not isinstance(seat_ids, list) or not seat_ids:
+            return Response(
+                {"error": "Provide at least one seat in 'seats'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(seat_ids) != len(set(seat_ids)):
+            return Response(
+                {"error": "Duplicate seat IDs are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            seats = list(
+                Seat.objects.select_for_update().filter(id__in=seat_ids)
+            )
+
+            if len(seats) != len(seat_ids):
+                return Response(
+                    {"error": "One or more seats do not exist."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            bookings = list(
+                Booking.objects.select_for_update().filter(
+                    user=request.user,
+                    seat_id__in=seat_ids,
+                )
+            )
+
+            booked_seat_ids = {booking.seat_id for booking in bookings}
+            uncancellable_seat_ids = [
+                seat_id for seat_id in seat_ids
+                if seat_id not in booked_seat_ids
+            ]
+            if uncancellable_seat_ids:
+                return Response(
+                    {
+                        "error": "You do not have an active booking for one or more seats.",
+                        "seats": uncancellable_seat_ids,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            cancelled_seat_numbers = [booking.seat.seat_number for booking in bookings]
+            Booking.objects.filter(id__in=[booking.id for booking in bookings]).delete()
+            Seat.objects.filter(id__in=booked_seat_ids).update(is_booked=False)
+
+        return Response(
+            {
+                "message": "Booking cancelled successfully.",
+                "cancelled_seats": cancelled_seat_numbers,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class UserBookingsView(APIView):
     permission_classes = [IsAuthenticated]
 
