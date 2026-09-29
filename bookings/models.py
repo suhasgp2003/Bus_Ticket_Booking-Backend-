@@ -16,13 +16,22 @@ class Bus(models.Model):
     def __str__(self):
         return f"{self.bus_name} {self.bus_number}  {self.origin}  {self.destination}"
 
+
 class Seat(models.Model):
+    SEAT_TYPE_CHOICES = [
+        ('window', 'Window'),
+        ('aisle', 'Aisle'),
+    ]
+
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE,related_name='seats')
     seat_number = models.CharField(max_length=10)
-    is_booked = models.BooleanField(default=False)   
+    is_booked = models.BooleanField(default=False)
+    row = models.PositiveIntegerField()
+    column = models.PositiveIntegerField()
+    seat_type = models.CharField(max_length=10, choices=SEAT_TYPE_CHOICES)
 
     def __str__(self):
-        return f"{self.bus} {self.seat_number}" 
+        return f"{self.bus} {self.seat_number}"
 
 class Booking(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
@@ -32,5 +41,3 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.user.username}-{self.bus.bus_name}-{self.bus.start_time}-{self.bus.reach_time}-{self.seat.seat_number}"
-    
-        

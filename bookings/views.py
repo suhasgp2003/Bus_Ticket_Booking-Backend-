@@ -38,7 +38,6 @@ class BusDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BusSerializer
 
 
-
 class BookingView(APIView):
     permission_classes = [IsAuthenticated]
 

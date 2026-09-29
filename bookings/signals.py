@@ -6,4 +6,11 @@ from .models import Bus, Seat
 def create_seats_for_bus(sender,instance,created,**kwargs):
     if created:
         for i in range(1, instance.no_of_seats + 1):
-            Seat.objects.create(bus=instance, seat_number=f"S{i}")
+            column = (i - 1) % 4 + 1
+            Seat.objects.create(
+                bus=instance,
+                seat_number=f"S{i}",
+                row=(i - 1) // 4 + 1,
+                column=column,
+                seat_type='window' if column in (1, 4) else 'aisle',
+            )

@@ -21,18 +21,19 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class SeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seat
-        fields = ['id', 'seat_number', 'is_booked']
+        fields = ['id', 'seat_number', 'is_booked', 'row', 'column', 'seat_type']
 
 class BusSerializer(serializers.ModelSerializer):
     seats=SeatSerializer(many=True, read_only=True)
     class Meta:
         model = Bus
-        fields = '__all__'        
+        fields = '__all__'
 
 class BusSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Bus
         fields = ['bus_name', 'bus_number', 'origin', 'destination']           
+
 
 class BookingSerializer(serializers.ModelSerializer):
     bus = BusSummarySerializer(read_only=True)
