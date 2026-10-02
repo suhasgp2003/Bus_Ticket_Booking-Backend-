@@ -71,7 +71,8 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://bus-ticket-booking-react.vercel.app/'
+    "http://localhost:5173",
+    'https://bus-ticket-booking-react.vercel.app'
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
