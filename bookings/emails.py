@@ -1,4 +1,9 @@
+import logging
+
 from django.core.mail import EmailMessage
+
+
+logger = logging.getLogger(__name__)
 
 
 def _send_email(*, recipient, subject, body):
@@ -6,7 +11,12 @@ def _send_email(*, recipient, subject, body):
     if not recipient:
         return
 
-    EmailMessage(subject=subject, body=body, to=[recipient]).send(fail_silently=True)
+    try:
+        EmailMessage(subject=subject, body=body, to=[recipient]).send(
+            fail_silently=True
+        )
+    except Exception:
+        logger.exception("Unable to send email notification to %s", recipient)
 
 
 def send_account_created_email(user):

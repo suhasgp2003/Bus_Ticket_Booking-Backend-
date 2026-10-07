@@ -62,4 +62,13 @@ class EmailNotificationTests(SimpleTestCase):
         self.assertIn("A1", email_message.call_args.kwargs["body"])
         email_message.return_value.send.assert_called_once_with(fail_silently=True)
 
+    @patch("bookings.emails.EmailMessage")
+    def test_email_delivery_error_does_not_interrupt_the_request(self, email_message):
+        email_message.return_value.send.side_effect = RuntimeError("SMTP unavailable")
+        user = SimpleNamespace(username="sam", email="sam@example.com")
+
+        send_account_created_email(user)
+
+        email_message.return_value.send.assert_called_once_with(fail_silently=True)
+
 # Create your tests here.
