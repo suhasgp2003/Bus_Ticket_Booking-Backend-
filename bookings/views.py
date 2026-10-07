@@ -8,6 +8,11 @@ from .serializers import UserRegisterSerializer, BusSerializer, BookingSerialize
 from rest_framework.response import Response
 from .models import Bus, Seat, Booking
 from django.db import transaction
+from .emails import (
+    send_account_created_email,
+    send_booking_cancellation_email,
+    send_booking_confirmation_email,
+)
 
 # Create your views here.
 class RegisterView(APIView):
@@ -16,6 +21,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token, created = Token.objects.get_or_create(user=user)
+            send_account_created_email(user)
             return Response({'token': token.key}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -82,6 +88,9 @@ class BookingView(APIView):
                 Booking(user=request.user, bus=seat.bus, seat=seat)
                 for seat in seats
             ])
+            transaction.on_commit(
+                lambda: send_booking_confirmation_email(request.user, bookings)
+            )
 
         return Response(
             BookingSerializer(bookings, many=True).data,
@@ -142,6 +151,9 @@ class BookingCancellationView(APIView):
             cancelled_seat_numbers = [booking.seat.seat_number for booking in bookings]
             Booking.objects.filter(id__in=[booking.id for booking in bookings]).delete()
             Seat.objects.filter(id__in=booked_seat_ids).update(is_booked=False)
+            transaction.on_commit(
+                lambda: send_booking_cancellation_email(request.user, bookings)
+            )
 
         return Response(
             {

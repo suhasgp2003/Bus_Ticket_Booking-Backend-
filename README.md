@@ -145,6 +145,18 @@ React Router==7.18.3
    ALLOWED_HOSTS=localhost,127.0.0.1
    ```
 
+   Email is written to the server console by default. To deliver email through
+   an SMTP provider in production, add the following values to `.env`:
+   ```env
+  DEFAULT_FROM_EMAIL=youraddress@gmail.com
+  EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+  EMAIL_HOST=smtp.gmail.com
+  EMAIL_PORT=587
+  EMAIL_HOST_USER=youraddress@gmail.com
+  EMAIL_HOST_PASSWORD=your-16-character-google-app-password
+  EMAIL_USE_TLS=true
+   ```
+
 5. **Setup database**
    ```bash
    python manage.py makemigrations
@@ -292,7 +304,7 @@ This project demonstrates:
 
 ### Current Limitations
 - [ ] Payment integration
-- [ ] Email notifications
+- [x] Email notifications for account creation, booking confirmation, and cancellation
 - [ ] Advanced filtering (date range, price range)
 - [ ] User reviews and ratings
 - [ ] Admin dashboard
