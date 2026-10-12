@@ -12,11 +12,11 @@ def _send_email(*, recipient, subject, body):
         return
 
     try:
-        EmailMessage(subject=subject, body=body, to=[recipient]).send(
-            fail_silently=True
-        )
+        sent = EmailMessage(subject=subject, body=body, to=[recipient]).send()
+        if sent != 1:
+            logger.error("Email backend did not accept the notification")
     except Exception:
-        logger.exception("Unable to send email notification to %s", recipient)
+        logger.exception("Unable to send email notification")
 
 
 def send_account_created_email(user):

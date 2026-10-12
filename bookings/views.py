@@ -19,9 +19,10 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
-            send_account_created_email(user)
+            with transaction.atomic():
+                user = serializer.save()
+                token, created = Token.objects.get_or_create(user=user)
+                transaction.on_commit(lambda: send_account_created_email(user))
             return Response({'token': token.key}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

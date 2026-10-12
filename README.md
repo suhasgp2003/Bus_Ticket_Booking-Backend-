@@ -145,17 +145,18 @@ React Router==7.18.3
    ALLOWED_HOSTS=localhost,127.0.0.1
    ```
 
-   Email is written to the server console by default. To deliver email through
-   an SMTP provider in production, add the following values to `.env`:
+   Email is written to the server console by default. For Brevo delivery on
+   Render, add these variables in the service's **Environment** settings:
    ```env
-  DEFAULT_FROM_EMAIL=youraddress@gmail.com
-  EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-  EMAIL_HOST=smtp.gmail.com
-  EMAIL_PORT=587
-  EMAIL_HOST_USER=youraddress@gmail.com
-  EMAIL_HOST_PASSWORD=your-16-character-google-app-password
-  EMAIL_USE_TLS=true
+   EMAIL_BACKEND=bookings.email_backend.BrevoEmailBackend
+   BREVO_API_KEY=your-brevo-api-key
+   DEFAULT_FROM_EMAIL=your-verified-brevo-sender@example.com
+   BREVO_SENDER_NAME=GoBus
+   EMAIL_TIMEOUT=10
    ```
+   Use a Brevo **API key**, which is different from an SMTP key. The backend
+   calls Brevo over HTTPS without installing another package. See
+   [Brevo setup and verification](BREVO_SETUP.md) for deployment steps.
 
 5. **Setup database**
    ```bash
@@ -323,7 +324,7 @@ This project demonstrates:
 
 ### Run Tests (Backend)
 ```bash
-python manage.py test
+python manage.py test bookings --settings=TransportNetwork.test_settings
 ```
 
 ### Run Linting (Frontend)

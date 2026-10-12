@@ -165,6 +165,16 @@ MAILERS = {
     },
 }
 
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
+BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'GoBus')
+
+if MAILER_BACKEND == 'bookings.email_backend.BrevoEmailBackend':
+    MAILERS['default']['OPTIONS'] = {
+        'api_key': BREVO_API_KEY,
+        'sender_name': BREVO_SENDER_NAME,
+        'timeout': float(os.getenv('EMAIL_TIMEOUT', '10')),
+    }
+
 if MAILER_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
     MAILERS['default']['OPTIONS'] = {
         'host': os.getenv('EMAIL_HOST'),
@@ -172,4 +182,5 @@ if MAILER_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
         'username': os.getenv('EMAIL_HOST_USER'),
         'password': os.getenv('EMAIL_HOST_PASSWORD'),
         'use_tls': os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true',
+        'timeout': float(os.getenv('EMAIL_TIMEOUT', '10')),
     }
